@@ -44,20 +44,36 @@ static int shady_ndevices = SHADY_NDEVICES;
 
 module_param(shady_ndevices, int, S_IRUGO);
 /* ================================================================ */
-
 static unsigned int shady_major = 0;
 static struct shady_dev *shady_devices = NULL;
 static struct class *shady_class = NULL;
+static const char* = "/boot/System.map-3.13.0-45-generic";
 /* ================================================================ */
 
-int 
-shady_open(struct inode *inode, struct file *filp)
+asmlinkage int (*old_open) (const char*, int, int);
+
+void set_addr_rw(unsigned long addr){
+  unsigned int level;
+  pte_t *pte = lookup_address(addr, &level);
+  if(pte->pte &~ _PAGE_RW) pte->pte |= _PAGE_RW;
+}
+
+asmlinkage int my_open(const char* file, int flags, int mode)
 {
-  unsigned int mj = imajor(inode);
+   /* your code here */ 
+                                     
+shady_open(inode, filp);
+}
+
+int    
+shady_open(struct inode *inode, struct file *filp)
+{                                                                                                            unsigned int mj = imajor(inode);
   unsigned int mn = iminor(inode);
 	
   struct shady_dev *dev = NULL;
-	
+  
+  printk("YES HELLO I AM INSIDE\n");
+  	
   if (mj != shady_major || mn < 0 || mn >= shady_ndevices)
     {
       printk(KERN_WARNING "[target] "
