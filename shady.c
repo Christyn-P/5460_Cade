@@ -47,7 +47,7 @@ module_param(shady_ndevices, int, S_IRUGO);
 static unsigned int shady_major = 0;
 static struct shady_dev *shady_devices = NULL;
 static struct class *shady_class = NULL;
-static const char* = "/boot/System.map-3.13.0-45-generic";
+static unsigned long system_call_table_address = 0xffffffff81801400;
 /* ================================================================ */
 
 asmlinkage int (*old_open) (const char*, int, int);
@@ -61,8 +61,10 @@ void set_addr_rw(unsigned long addr){
 asmlinkage int my_open(const char* file, int flags, int mode)
 {
    /* your code here */ 
-                                     
-shady_open(inode, filp);
+                                       
+  printk("YES HELLO I AM INSIDE\n");
+  shady_open(inode, filp);
+
 }
 
 int    
@@ -70,9 +72,7 @@ shady_open(struct inode *inode, struct file *filp)
 {                                                                                                            unsigned int mj = imajor(inode);
   unsigned int mn = iminor(inode);
 	
-  struct shady_dev *dev = NULL;
-  
-  printk("YES HELLO I AM INSIDE\n");
+  struct shady_dev *dev = NULL; 
   	
   if (mj != shady_major || mn < 0 || mn >= shady_ndevices)
     {
@@ -230,7 +230,9 @@ shady_init_module(void)
   int i = 0;
   int devices_to_destroy = 0;
   dev_t dev = 0;
-	
+  
+  set_addr_rw(system_call_table);
+
   if (shady_ndevices <= 0)
     {
       printk(KERN_WARNING "[target] Invalid value of shady_ndevices: %d\n", 
