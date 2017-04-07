@@ -1,0 +1,7 @@
+#git ignore for meeee
+
+*.ko
+*.mod.*
+modules.order
+Module.symvers
+*.o
