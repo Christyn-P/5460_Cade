@@ -94,7 +94,7 @@ sleepy_read(struct file *filp, char __user *buf, size_t count,
     return -EINTR;
 	
   /* YOUR CODE HERE */
-
+   printk("inside read\n");
   /* END YOUR CODE */
 	
   mutex_unlock(&dev->sleepy_mutex);
@@ -112,7 +112,7 @@ sleepy_write(struct file *filp, const char __user *buf, size_t count,
     return -EINTR;
 	
   /* YOUR CODE HERE */
-
+  printk("inside write\n");
   /* END YOUR CODE */
 	
   mutex_unlock(&dev->sleepy_mutex);
