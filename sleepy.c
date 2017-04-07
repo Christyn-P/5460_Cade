@@ -28,6 +28,8 @@
 #include <linux/device.h>
 #include <linux/mutex.h>
 #include <asm/uaccess.h>
+#include <linux/wait.h>
+#include <linux/sched.h>
 
 #include "sleepy.h"
 
@@ -100,6 +102,7 @@ sleepy_read(struct file *filp, char __user *buf, size_t count,
 	
   /* YOUR CODE HERE */
  printk("inside read\n");
+ wake_up_interruptible(&dev->inq);
  error_count = copy_to_user(buf, message, size_of_msg);
  if(error_count == 0){
     printk("yes!\n");
@@ -121,19 +124,16 @@ sleepy_write(struct file *filp, const char __user *buf, size_t count,
 {
   struct sleepy_dev *dev = (struct sleepy_dev *)filp->private_data;
   ssize_t retval = 0;
-  int sleep_time = simple_strtoul(buf, NULL ,10);
+  int sleep_time = simple_strtoul(buf, NULL,10);
   sleep_time = sleep_time*100;
-  printk("%d\n",sleep_time);
   if (mutex_lock_killable(&dev->sleepy_mutex))
-    return -EINTR;
-	
+    return -EINTR;	
   /* YOUR CODE HERE */
   printk("inside write\n");
 
-  //wait_event_interruptible_timeout(dev->inq, 0, sleep_time); 
+  wait_event_interruptible_timeout(dev->inq, dev->flag != 0, sleep_time); 
   sprintf(message, buf, count);
   size_of_msg = strlen(message);
-  printk("stuff got wrote");
   /* END YOUR CODE */
 	
   mutex_unlock(&dev->sleepy_mutex);
@@ -177,8 +177,7 @@ sleepy_construct_device(struct sleepy_dev *dev, int minor,
   cdev_init(&dev->cdev, &sleepy_fops);
   /* initialize the wait queues that were added to sleepy.h */
   init_waitqueue_head(&dev->inq);
-  init_waitqueue_head(&dev->outq);
-
+  dev->flag = 0;
   dev->cdev.owner = THIS_MODULE;
     
   err = cdev_add(&dev->cdev, devno, 1);

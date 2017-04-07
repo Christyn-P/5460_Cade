@@ -20,6 +20,7 @@ struct sleepy_dev {
   unsigned char *data;
   struct mutex sleepy_mutex; 
   struct cdev cdev;
-  wait_queue_head_t inq, outq;
+  wait_queue_head_t inq;
+  int flag;
 };
 #endif /* SLEEPY_H_1727_INCLUDED */
