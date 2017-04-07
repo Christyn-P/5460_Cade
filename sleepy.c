@@ -43,9 +43,15 @@ static int sleepy_ndevices = SLEEPY_NDEVICES;
 module_param(sleepy_ndevices, int, S_IRUGO);
 /* ================================================================ */
 
+//stores the device number
 static unsigned int sleepy_major = 0;
+//struct for device
 static struct sleepy_dev *sleepy_devices = NULL;
 static struct class *sleepy_class = NULL;
+
+//ADDED BY CHRISTYN FOR ASSIGNMENT
+static char message[256] = {0}; //for message
+static short size_of_msg; //msg size
 /* ================================================================ */
 
 int 
@@ -89,12 +95,21 @@ sleepy_read(struct file *filp, char __user *buf, size_t count,
 {
   struct sleepy_dev *dev = (struct sleepy_dev *)filp->private_data;
   ssize_t retval = 0;
-	
+  int error_count = 0;	
   if (mutex_lock_killable(&dev->sleepy_mutex))
     return -EINTR;
 	
   /* YOUR CODE HERE */
-   printk("inside read\n");
+ printk("inside read\n");
+ error_count = copy_to_user(buf, message, size_of_msg);
+ if(error_count == 0){
+    printk("yes!\n");
+    return (size_of_msg=0);
+  }
+ else{
+    printk("fuck\n");
+    return EINVAL;
+  }
   /* END YOUR CODE */
 	
   mutex_unlock(&dev->sleepy_mutex);
@@ -107,12 +122,14 @@ sleepy_write(struct file *filp, const char __user *buf, size_t count,
 {
   struct sleepy_dev *dev = (struct sleepy_dev *)filp->private_data;
   ssize_t retval = 0;
-	
   if (mutex_lock_killable(&dev->sleepy_mutex))
     return -EINTR;
 	
   /* YOUR CODE HERE */
   printk("inside write\n");
+  sprintf(message, buf, count);
+  size_of_msg = strlen(message);
+  printk("stuff got wrote");
   /* END YOUR CODE */
 	
   mutex_unlock(&dev->sleepy_mutex);
@@ -154,6 +171,10 @@ sleepy_construct_device(struct sleepy_dev *dev, int minor,
   mutex_init(&dev->sleepy_mutex);
     
   cdev_init(&dev->cdev, &sleepy_fops);
+  /* initialize the wait queues that were added to sleepy.h */
+  init_waitqueue_head(dev->inq);
+  init_waitqueue_head(dev->outq);
+
   dev->cdev.owner = THIS_MODULE;
     
   err = cdev_add(&dev->cdev, devno, 1);
