@@ -101,17 +101,15 @@ sleepy_read(struct file *filp, char __user *buf, size_t count,
     return -EINTR;
 	
   /* YOUR CODE HERE */
- printk("inside read\n");
- wake_up_interruptible(&dev->inq);
- error_count = copy_to_user(buf, message, size_of_msg);
- if(error_count == 0){
-    printk("yes!\n");
-    return (size_of_msg=0);
-  }
- else{
-    printk("fuck\n");
-    return EINVAL;
-  }
+  printk("inside read\n");
+  wake_up_interruptible_all(&dev->inq);
+  error_count = copy_to_user(buf, message, size_of_msg);
+  if(error_count == 0){
+     return (size_of_msg=0);
+   }
+  else{
+     return EINVAL;
+   }
   /* END YOUR CODE */
 	
   mutex_unlock(&dev->sleepy_mutex);
@@ -130,12 +128,13 @@ sleepy_write(struct file *filp, const char __user *buf, size_t count,
     return -EINTR;	
   /* YOUR CODE HERE */
   printk("inside write\n");
-
-  wait_event_interruptible_timeout(dev->inq, dev->flag != 0, sleep_time); 
+  mutex_unlock(&dev->sleepy_mutex);
+  retval = wait_event_interruptible_timeout(dev->inq, dev->flag != 0, sleep_time);
+  if(mutex_lock_killable(&dev->sleepy_mutex))
+    return -EINTR; 
   sprintf(message, buf, count);
   size_of_msg = strlen(message);
   /* END YOUR CODE */
-	
   mutex_unlock(&dev->sleepy_mutex);
   return retval;
 }
