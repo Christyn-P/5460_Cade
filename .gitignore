@@ -1,7 +1,12 @@
 #git ignore for meeee
 
+user
 *.ko
 *.mod.*
 modules.order
 Module.symvers
 *.o
+.shady.*
+.sleepy.*
+.tmp_versions/shady.mod
+.tmp_versions/sleepy.mod

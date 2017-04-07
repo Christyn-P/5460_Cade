@@ -27,7 +27,6 @@
 #include <linux/cdev.h>
 #include <linux/device.h>
 #include <linux/mutex.h>
-
 #include <asm/uaccess.h>
 
 #include "sleepy.h"
@@ -122,11 +121,16 @@ sleepy_write(struct file *filp, const char __user *buf, size_t count,
 {
   struct sleepy_dev *dev = (struct sleepy_dev *)filp->private_data;
   ssize_t retval = 0;
+  int sleep_time = simple_strtoul(buf, NULL ,10);
+  sleep_time = sleep_time*100;
+  printk("%d\n",sleep_time);
   if (mutex_lock_killable(&dev->sleepy_mutex))
     return -EINTR;
 	
   /* YOUR CODE HERE */
   printk("inside write\n");
+
+  //wait_event_interruptible_timeout(dev->inq, 0, sleep_time); 
   sprintf(message, buf, count);
   size_of_msg = strlen(message);
   printk("stuff got wrote");
@@ -172,8 +176,8 @@ sleepy_construct_device(struct sleepy_dev *dev, int minor,
     
   cdev_init(&dev->cdev, &sleepy_fops);
   /* initialize the wait queues that were added to sleepy.h */
-  init_waitqueue_head(dev->inq);
-  init_waitqueue_head(dev->outq);
+  init_waitqueue_head(&dev->inq);
+  init_waitqueue_head(&dev->outq);
 
   dev->cdev.owner = THIS_MODULE;
     
