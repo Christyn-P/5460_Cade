@@ -102,14 +102,8 @@ sleepy_read(struct file *filp, char __user *buf, size_t count,
 	
   /* YOUR CODE HERE */
   printk("inside read\n");
-  wake_up_interruptible_all(&dev->inq);
-  error_count = copy_to_user(buf, message, size_of_msg);
-  if(error_count == 0){
-     return (size_of_msg=0);
-   }
-  else{
-     return EINVAL;
-   }
+  dev->flag = 1;
+  wake_up_interruptible(&dev->inq);
   /* END YOUR CODE */
 	
   mutex_unlock(&dev->sleepy_mutex);
@@ -122,19 +116,26 @@ sleepy_write(struct file *filp, const char __user *buf, size_t count,
 {
   struct sleepy_dev *dev = (struct sleepy_dev *)filp->private_data;
   ssize_t retval = 0;
-  int sleep_time = simple_strtoul(buf, NULL,10);
-  sleep_time = sleep_time*100;
+ 
+  int sleep_time;
+  if(count != 4){
+    return EINVAL;
+  }
   if (mutex_lock_killable(&dev->sleepy_mutex))
     return -EINTR;	
   /* YOUR CODE HERE */
-  printk("inside write\n");
+  
+  get_user(sleep_time, buf);
+  sleep_time = sleep_time*100;
+  dev->flag=0;
+  //unlock before sleeping
   mutex_unlock(&dev->sleepy_mutex);
   retval = wait_event_interruptible_timeout(dev->inq, dev->flag != 0, sleep_time);
+  //lock before messing with st00f
   if(mutex_lock_killable(&dev->sleepy_mutex))
     return -EINTR; 
-  sprintf(message, buf, count);
-  size_of_msg = strlen(message);
-  /* END YOUR CODE */
+  dev->flag=0;
+ /* END YOUR CODE */
   mutex_unlock(&dev->sleepy_mutex);
   return retval;
 }
