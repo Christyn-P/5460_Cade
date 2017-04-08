@@ -48,6 +48,7 @@ static unsigned int shady_major = 0;
 static struct shady_dev *shady_devices = NULL;
 static struct class *shady_class = NULL;
 static unsigned long system_call_table_address = 0xffffffff81801400;
+static void ** system_call_table;
 /* ================================================================ */
 
 asmlinkage int (*old_open) (const char*, int, int);
@@ -63,13 +64,14 @@ asmlinkage int my_open(const char* file, int flags, int mode)
    /* your code here */ 
                                        
   printk("YES HELLO I AM INSIDE\n");
-  shady_open(inode, filp);
+  //redirect back to the original open
+  old_open(file, flags, mode);
 
 }
 
 int    
 shady_open(struct inode *inode, struct file *filp)
-{                                                                                                            unsigned int mj = imajor(inode);
+{                                                                                 unsigned int mj = imajor(inode);
   unsigned int mn = iminor(inode);
 	
   struct shady_dev *dev = NULL; 
@@ -213,7 +215,8 @@ shady_cleanup_module(int devices_to_destroy)
     }
     kfree(shady_devices);
   }
-    
+  //set location of open back to normal
+  system_call_table[__NR_OPEN] = old_open;
   if (shady_class)
     class_destroy(shady_class);
 
@@ -273,7 +276,11 @@ shady_init_module(void)
       goto fail;
     }
   }
-  
+  system_call_table = (void *) system_call_table_address; //point to beginning of table
+  old_open = system_call_table[__NR_OPEN]; //save open location in old open
+  system_call_table[__NR_OPEN] = my_open; //set open location to MYopen
+
+ 
   return 0; /* success */
 
  fail:
