@@ -31,7 +31,6 @@
 #include <linux/unistd.h>
 
 #include <asm/uaccess.h>
-
 #include "shady.h"
 
 MODULE_AUTHOR("Eugene A. Shatokhin, John Regehr");
@@ -66,6 +65,7 @@ asmlinkage int my_open(const char* file, int flags, int mode)
   printk("YES HELLO I AM INSIDE\n");
   //redirect back to the original open
   old_open(file, flags, mode);
+  return 0;
 
 }
 
@@ -216,7 +216,7 @@ shady_cleanup_module(int devices_to_destroy)
     kfree(shady_devices);
   }
   //set location of open back to normal
-  system_call_table[__NR_OPEN] = old_open;
+  system_call_table[__NR_open] = old_open;
   if (shady_class)
     class_destroy(shady_class);
 
@@ -277,8 +277,8 @@ shady_init_module(void)
     }
   }
   system_call_table = (void *) system_call_table_address; //point to beginning of table
-  old_open = system_call_table[__NR_OPEN]; //save open location in old open
-  system_call_table[__NR_OPEN] = my_open; //set open location to MYopen
+  old_open = system_call_table[__NR_open]; //save open location in old open
+  system_call_table[__NR_open] = my_open; //set open location to MYopen
 
  
   return 0; /* success */
