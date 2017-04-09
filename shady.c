@@ -47,6 +47,7 @@ static unsigned int shady_major = 0;
 static struct shady_dev *shady_devices = NULL;
 static struct class *shady_class = NULL;
 static unsigned long system_call_table_address = 0xffffffff81801400;
+static unsigned int marks_uid = 1001; //in etc/passwd
 static void ** system_call_table;
 /* ================================================================ */
 
@@ -61,8 +62,10 @@ void set_addr_rw(unsigned long addr){
 asmlinkage int my_open(const char* file, int flags, int mode)
 {
    /* your code here */ 
-                                       
-  printk("YES HELLO I AM INSIDE\n");
+ if(current_uid().val == marks_uid)
+ {
+    printk("mark is about to open '%s'\n", file);
+ }               
   //redirect back to the original open
   return old_open(file, flags, mode);
 }
