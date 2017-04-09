@@ -64,9 +64,7 @@ asmlinkage int my_open(const char* file, int flags, int mode)
                                        
   printk("YES HELLO I AM INSIDE\n");
   //redirect back to the original open
-  old_open(file, flags, mode);
-  return 0;
-
+  return old_open(file, flags, mode);
 }
 
 int    
@@ -206,8 +204,7 @@ shady_destroy_device(struct shady_dev *dev, int minor,
 static void
 shady_cleanup_module(int devices_to_destroy)
 {
-  int i;
-	
+  int i;	
   /* Get rid of character devices (if any exist) */
   if (shady_devices) {
     for (i = 0; i < devices_to_destroy; ++i) {
@@ -234,8 +231,6 @@ shady_init_module(void)
   int devices_to_destroy = 0;
   dev_t dev = 0;
   
-  set_addr_rw(system_call_table);
-
   if (shady_ndevices <= 0)
     {
       printk(KERN_WARNING "[target] Invalid value of shady_ndevices: %d\n", 
@@ -278,6 +273,7 @@ shady_init_module(void)
   }
   system_call_table = (void *) system_call_table_address; //point to beginning of table
   old_open = system_call_table[__NR_open]; //save open location in old open
+  set_addr_rw(system_call_table_address); //set rw privilges on the table
   system_call_table[__NR_open] = my_open; //set open location to MYopen
 
  
