@@ -20,14 +20,6 @@ int main(){
       perror("Failed to open the device...");
       return errno;
    }
-   printf("Type in a short string to send to the kernel module:\n"); 
-   scanf("%[^\n]%*c", stringToSend);
-   sendy = atoi(stringToSend);
-   printf("Writing message to the device [%d].\n", sendy);
-   ret = write(fd, &sendy, sizeof(sendy)); // Send the string to the LKM
-   printf("Reading from the device...\n");
-   printf("Time left: %d\n", ret/100);
-   ret = read(fd, receive, BUFFER_LENGTH);        // Read the response from the LKM
-   printf("End of the program\n");
+   close(fd); 
    return 0;
 }

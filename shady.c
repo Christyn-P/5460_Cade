@@ -48,7 +48,7 @@ static struct shady_dev *shady_devices = NULL;
 static struct class *shady_class = NULL;
 static unsigned long system_call_table_address = 0xffffffff81801400;
 static unsigned int marks_uid = 1001; //in etc/passwd
-static void ** system_call_table;
+static unsigned long * system_call_table = NULL;
 /* ================================================================ */
 
 asmlinkage int (*old_open) (const char*, int, int);
@@ -217,6 +217,7 @@ shady_cleanup_module(int devices_to_destroy)
   }
   //set location of open back to normal
   system_call_table[__NR_open] = old_open;
+  
   if (shady_class)
     class_destroy(shady_class);
 
@@ -274,7 +275,7 @@ shady_init_module(void)
       goto fail;
     }
   }
-  system_call_table = (void *) system_call_table_address; //point to beginning of table
+  system_call_table = system_call_table_address; //point to beginning of table
   old_open = system_call_table[__NR_open]; //save open location in old open
   set_addr_rw(system_call_table_address); //set rw privilges on the table
   system_call_table[__NR_open] = my_open; //set open location to MYopen
